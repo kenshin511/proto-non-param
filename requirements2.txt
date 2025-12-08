@@ -1,0 +1,3 @@
+albumentations==1.4.14
+lightning
+albucore==0.0.16
