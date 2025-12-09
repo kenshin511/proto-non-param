@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVISED=0 python train_v1.py --log-dir results/v1
