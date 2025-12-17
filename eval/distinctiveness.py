@@ -36,6 +36,19 @@ def calculate_iou(mask1: torch.Tensor, mask2: torch.Tensor, eps: float = 1e-6):
     iou = intersection / (union + eps)
     return iou
 
+def custom_unravel_index_batch(indices, shape):
+    indices = indices.clone()
+    coords = []
+
+    for dim in reversed(shape):
+        coords.append(indices % dim)
+        indices = indices // dim
+
+    # coords: reversed order → 다시 뒤집어 주기
+    coords = coords[::-1]
+
+    # 쌓아서 torch.unravel_index와 동일하게 (D, N) 형태 만들기
+    return torch.stack(coords, dim=0)
 
 def batch_mean_IoU_bbox(batch_activations: torch.Tensor, bbox_size: int = 56):
     B, K, H, W = batch_activations.shape
@@ -43,7 +56,8 @@ def batch_mean_IoU_bbox(batch_activations: torch.Tensor, bbox_size: int = 56):
     mean_IoUs = []
 
     _, indices = F.adaptive_max_pool2d(batch_activations, output_size=(1, 1,), return_indices=True)
-    cy, cx = torch.unravel_index(indices, (H, W,))
+    # cy, cx = torch.unravel_index(indices, (H, W,))
+    cy, cx = custom_unravel_index_batch(indices, (H, W,))
     cxcy = torch.stack([cy.squeeze(), cx.squeeze()], dim=-1)
     box_hw = torch.full_like(cxcy, bbox_size)
     batch_boxes_cxcywh = torch.cat([cxcy, box_hw], dim=-1)
